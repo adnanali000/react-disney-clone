@@ -1,15 +1,76 @@
-import React from "react";
+import React , { useEffect } from "react";
 import styled from "styled-components";
+import { selectUserName , selectUserPhoto , setUserLogin , setSignOut } from '../features/user/userSlice'
+import { useDispatch,useSelector } from 'react-redux'
+import { auth,provider } from '../firebase'
+import { useHistory } from 'react-router-dom'
+
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link
+} from "react-router-dom";
+
 
 function Header() {
+  const dispatch = useDispatch();
+  const history = useHistory();
+  const userName = useSelector(selectUserName);
+  const userPhoto = useSelector(selectUserPhoto);
+
+    useEffect(()=>{
+        auth.onAuthStateChanged(async (user)=>{
+          if(user){
+            dispatch(setUserLogin({
+              name: user.displayName,
+              email: user.email,
+              photo: user.photoURL
+        }))
+        history.push('/')
+          }
+        })
+    },[])
+
+  const signIn = ()=>{
+      auth.signInWithPopup(provider)
+      .then((result)=>{
+        let user = result.user;
+          dispatch(setUserLogin({
+                name: user.displayName,
+                email: user.email,
+                photo: user.photoURL
+          }))
+          history.push('/')
+      })
+  }
+
+  const signOut = ()=>{
+        auth.signOut()
+        .then(()=>{
+          dispatch(setSignOut())
+          history.push('/login');          
+        })
+  }
+
   return (
     <Nav>
       <Logo src="/images/logo.svg" />
-      <NavMenu>
+      { !userName ? (
+          <LoginContainer>
+                <Login onClick={signIn}>Login</Login>
+          </LoginContainer>
+           ):
+        <>
+             <NavMenu>
+                        
         <a>
+          <Link to ="/">
           <img src="/images/home-icon.svg" />
           <span>HOME </span>
+          </Link>
         </a>
+
         <a>
           <img src="/images/search-icon.svg" />
           <span>SEARCH </span>
@@ -32,7 +93,11 @@ function Header() {
         </a>
       </NavMenu>
 
-      <UserImg src = "https://avatars.githubusercontent.com/u/46294668?v=4"  />
+      <UserImg onClick={signOut} src = "https://avatars.githubusercontent.com/u/46294668?v=4"  />
+
+        </>
+
+      }
   
     </Nav>
   );
@@ -64,6 +129,8 @@ const NavMenu = styled.div`
     align-items: center;
     padding: 0px 12px;
     cursor:pointer;
+    color:white;
+    text-decoration:none;
 
     img {
       height: 20px;
@@ -108,3 +175,28 @@ const UserImg = styled.img`
     margin-top:5px; 
 
 `;
+
+const Login = styled.div`
+    border: 1px solid #f9f9f9;
+    padding: 8px 16px;
+    border-radius:4px;
+    letter-spacing:4px;
+    text-transform: uppercase;
+    background-color:rgba(0,0,0,0.6);
+    cursor:pointer;
+    transition: all 0.2s ease 0s;
+  
+    &:hover{
+      background-color:#f9f9f9;
+      color:#000;
+      border-color:transparent;
+    }
+`
+
+const LoginContainer = styled.div`
+    flex:1;
+    height:40px;
+    margin-top:15px;
+    display:flex;
+    justify-content:flex-end;
+`
