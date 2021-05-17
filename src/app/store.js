@@ -7,3 +7,5 @@ export const store = configureStore({
         movie: movieReducer
     }
 })
+
+export default store;
